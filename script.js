@@ -1,114 +1,139 @@
-(() => {
-  "use strict";
+/*
+  Green Horizon Landscaping
+  Editable areas:
+  - Phone/email/social links are in the HTML footer and contact page.
+  - Form service: contact.html sends to Formspree.
+  - Analytics: paste your Vercel Web Analytics script path below.
+  - Speed Insights: paste your Vercel Speed Insights script path below.
+*/
+const VERCEL_ANALYTICS_SCRIPT_PATH = "";
+const VERCEL_SPEED_INSIGHTS_SCRIPT_PATH = "";
 
-  const trackEvent = (name, data = {}) => {
-    if (typeof window.va === "function") window.va("event", { name, data });
+const navToggle = document.querySelector(".nav-toggle");
+const navMenu = document.querySelector(".nav-menu");
+const backToTop = document.querySelector(".back-to-top");
+const revealItems = document.querySelectorAll(".reveal");
+const estimateForm = document.querySelector(".contact-form");
+
+if (!document.querySelector(".mobile-actions")) {
+  const mobileActions = document.createElement("div");
+  mobileActions.className = "mobile-actions";
+  mobileActions.setAttribute("aria-label", "Quick contact");
+  mobileActions.innerHTML = '<a href="tel:+15550148300">Call Now</a><a class="estimate-action" href="contact.html">Free Estimate</a>';
+  document.body.appendChild(mobileActions);
+}
+
+document.querySelectorAll("img").forEach((image) => {
+  image.addEventListener("error", () => {
+    if (!image.src.includes("clean-south-shore-garden.jpg")) {
+      image.src = "assets/images/clean-south-shore-garden.jpg";
+      image.alt = image.alt || "Clean professionally landscaped garden";
+    }
+  }, { once: true });
+});
+
+if (VERCEL_ANALYTICS_SCRIPT_PATH) {
+  window.va = window.va || function () {
+    (window.vaq = window.vaq || []).push(arguments);
   };
+  const analyticsScript = document.createElement("script");
+  analyticsScript.defer = true;
+  analyticsScript.src = VERCEL_ANALYTICS_SCRIPT_PATH;
+  document.head.appendChild(analyticsScript);
+}
 
-  document.querySelectorAll("[data-year]").forEach((node) => {
-    node.textContent = new Date().getFullYear();
-  });
-
-  const navToggle = document.querySelector(".nav-toggle");
-  const navMenu = document.querySelector(".nav-menu");
-  const closeNav = () => {
-    if (!navToggle || !navMenu) return;
-    navToggle.classList.remove("open");
-    navMenu.classList.remove("open");
-    navToggle.setAttribute("aria-expanded", "false");
-    navToggle.setAttribute("aria-label", "Open navigation");
+if (VERCEL_SPEED_INSIGHTS_SCRIPT_PATH) {
+  window.si = window.si || function () {
+    (window.siq = window.siq || []).push(arguments);
   };
+  const speedInsightsScript = document.createElement("script");
+  speedInsightsScript.defer = true;
+  speedInsightsScript.src = VERCEL_SPEED_INSIGHTS_SCRIPT_PATH;
+  document.head.appendChild(speedInsightsScript);
+}
 
-  navToggle?.addEventListener("click", () => {
-    const open = navToggle.getAttribute("aria-expanded") !== "true";
-    navToggle.classList.toggle("open", open);
-    navMenu?.classList.toggle("open", open);
-    navToggle.setAttribute("aria-expanded", String(open));
-    navToggle.setAttribute("aria-label", open ? "Close navigation" : "Open navigation");
-  });
-  navMenu?.querySelectorAll("a").forEach((link) => link.addEventListener("click", closeNav));
-  window.addEventListener("resize", () => {
-    if (window.innerWidth > 900) closeNav();
+if (navToggle && navMenu) {
+  navToggle.addEventListener("click", () => {
+    const isOpen = navMenu.classList.toggle("is-open");
+    navToggle.classList.toggle("is-open", isOpen);
+    navToggle.setAttribute("aria-expanded", String(isOpen));
   });
 
-  document.querySelectorAll('a[href^="#"]').forEach((link) => {
-    link.addEventListener("click", (event) => {
-      const target = document.querySelector(link.getAttribute("href"));
-      if (!target) return;
-      event.preventDefault();
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
+  navMenu.querySelectorAll("a").forEach((link) => {
+    link.addEventListener("click", () => {
+      navMenu.classList.remove("is-open");
+      navToggle.classList.remove("is-open");
+      navToggle.setAttribute("aria-expanded", "false");
     });
   });
+}
 
-  document.querySelectorAll(".faq-question").forEach((button) => {
-    button.addEventListener("click", () => {
-      const expanded = button.getAttribute("aria-expanded") === "true";
-      button.setAttribute("aria-expanded", String(!expanded));
-      button.closest(".faq-item")?.classList.toggle("open", !expanded);
-    });
+if (backToTop) {
+  window.addEventListener("scroll", () => {
+    backToTop.classList.toggle("is-visible", window.scrollY > 520);
   });
 
-  const backToTop = document.querySelector(".back-to-top");
-  const updateBackToTop = () => backToTop?.classList.toggle("show", window.scrollY > 500);
-  window.addEventListener("scroll", updateBackToTop, { passive: true });
-  updateBackToTop();
-  backToTop?.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+  backToTop.addEventListener("click", () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+}
 
-  const revealItems = document.querySelectorAll(".reveal");
-  if ("IntersectionObserver" in window && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add("visible");
-          observer.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.12 });
-    revealItems.forEach((item) => observer.observe(item));
-  } else {
-    revealItems.forEach((item) => item.classList.add("visible"));
-  }
+const requestedService = new URLSearchParams(window.location.search).get("service");
+const serviceSelect = document.querySelector("#service");
+if (requestedService && serviceSelect) {
+  const matchingOption = Array.from(serviceSelect.options).find((option) => option.value === requestedService);
+  if (matchingOption) serviceSelect.value = requestedService;
+}
 
-  const form = document.querySelector("[data-consultation-form]");
-  if (!form) return;
-
-  const status = form.querySelector(".form-status");
-  const submit = form.querySelector('[type="submit"]');
-  const params = new URLSearchParams(window.location.search);
-  const selectedProgram = params.get("program");
-  const focus = form.querySelector('[name="training_focus"]');
-  if (selectedProgram && focus) {
-    const matchingOption = Array.from(focus.options).find((option) => option.textContent.toLowerCase().includes(selectedProgram.toLowerCase().replace(" coaching", "").replace(" training", "")));
-    if (matchingOption) focus.value = matchingOption.value;
-  }
-
-  form.addEventListener("submit", async (event) => {
+if (estimateForm) {
+  estimateForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    if (!form.reportValidity()) return;
+    const submitButton = estimateForm.querySelector(".submit-button");
+    const formStatus = estimateForm.querySelector(".form-status");
+    const originalLabel = submitButton.textContent;
 
-    submit.disabled = true;
-    submit.textContent = "Sending...";
-    status.textContent = "Sending your consultation request.";
+    submitButton.disabled = true;
+    submitButton.textContent = "Sending Request...";
+    formStatus.className = "form-status";
+    formStatus.textContent = "";
 
     try {
-      const response = await fetch(form.action, {
+      const response = await fetch(estimateForm.action, {
         method: "POST",
-        body: new FormData(form),
-        headers: { Accept: "application/json" },
+        body: new FormData(estimateForm),
+        headers: { Accept: "application/json" }
       });
+
       if (!response.ok) throw new Error("Submission failed");
-      form.reset();
-      status.textContent = "Thank you for requesting a consultation. Tory and John received your information and will contact you by email to discuss your goals and next steps.";
-      status.classList.add("success");
-      status.focus();
-      trackEvent("consultation_submitted", { page: window.location.pathname || "/" });
-    } catch {
-      status.textContent = "We could not send the form. Please email torycurtismassage@comcast.net instead.";
-      status.classList.remove("success");
-      status.focus();
+
+      estimateForm.reset();
+      formStatus.className = "form-status is-success";
+      formStatus.textContent = "Thank you. Your estimate request has been sent. We will contact you within one business day.";
+      formStatus.scrollIntoView({ behavior: "smooth", block: "center" });
+    } catch (error) {
+      formStatus.className = "form-status is-error";
+      formStatus.textContent = "We could not send your request. Please try again or call us directly.";
     } finally {
-      submit.disabled = false;
-      submit.textContent = "Send consultation request";
+      submitButton.disabled = false;
+      submitButton.textContent = originalLabel;
     }
   });
-})();
+}
+
+if ("IntersectionObserver" in window) {
+  const revealObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.14 }
+  );
+
+  revealItems.forEach((item) => revealObserver.observe(item));
+} else {
+  revealItems.forEach((item) => item.classList.add("is-visible"));
+}
